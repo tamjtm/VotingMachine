@@ -93,9 +93,12 @@ uint16_t keypad_read()
 	{
 		key = key << 4;					// shift left 4-bit
 		
+		_delay_ms(1);
 		/* scan a row and collect in key */
 		KEYPAD_DDR |= (1 << i);			// set DDRB0 to output
 		KEYPAD_PORT &= ~(1 << i);		// set to GND
+		_delay_ms(1);
+		
 		key |= (KEYPAD_PIN & 0xF0) >> 4;		// read only 4-bit MSB (clear 4-bit LSB by 0)
 		
 		KEYPAD_DDR &= ~(1 << i);		// reset to input (pull up)
@@ -149,10 +152,69 @@ void result_section(uint16_t key)
 	}
 }
 
+void I2C_Init()
+{
+	TWSR=0x00; //set presca1er bits to zero
+	TWBR=0x32; //SCL frequency is 100K for 8Mhz
+	TWCR=0x04; //enab1e TWI module
+}
+
+void I2C_Start()
+{
+	TWCR = ((1<<TWINT) | (1<<TWSTA) | (1<<TWEN));
+	while (!(TWCR & (1<<TWINT)));
+}
+
+void I2C_Stop(void)
+{
+	TWCR = ((1<< TWINT) | (1<<TWEN) | (1<<TWSTO));
+	_delay_us(100) ; //wait for a short time
+}
+
+void I2C_Write(uint8_t v_i2cData_u8)
+{
+	TWDR = v_i2cData_u8 ;
+	TWCR = ((1<< TWINT) | (1<<TWEN));
+	while (!(TWCR & (1 <<TWINT)));
+}
+
+uint8_t I2C_ReadwithAck()
+{
+	TWCR = ((1<< TWINT) | (1<<TWEN) | (1<<TWEA));
+	while ( !(TWCR & (1 <<TWINT)));
+	return TWDR;
+}
+
+unsigned char RFID_Read()
+{
+	uint8_t id;
+	unsigned char cardID[8];
+	int i;
+	char buffer[8];
+	
+	I2C_Start();
+	for(i=0;i<8;i++)
+	{
+		id = I2C_ReadwithAck();
+		cardID[i] = id;
+		sprintf(buffer, "%u", id);
+		for (i = 0; i < strlen(buffer); i++)
+		{
+			LCD_Data(buffer[i]);					// send input character to LCD for displaying
+		}
+	}
+	I2C_Stop();
+	
+	return *cardID;
+}
+
 int main(void)
 {
+	unsigned char cardID[8] ;
+	
 	LCD_Init();
 	keypad_init();
+	I2C_Init();
 		
 	while (1)
 	{
@@ -160,11 +222,12 @@ int main(void)
 		LCD_String ("RFID NUMBER..");	//sending string
 		LCD_Command(0xC0);				//moving courser to second line
 		
-		
+		*cardID = RFID_Read();
 		
 		uint16_t key = voting_section();
 		result_section(key);
-				
+		
+			
 		_delay_ms(200);
 	}
 }
