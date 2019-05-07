@@ -18,12 +18,19 @@
 #define DATA_DDR DDRD
 #define DATA_PORT PORTD
 
+#define LED_GREEN_DDR	DDRB
+#define LED_GREEN_PORT	PORTB
+
+#define BUTTON_DDR	DDRB
+#define BUTTON_PORT	PORTB
+#define BUTTON_PIN	PINB
+
 //#define LCD_Dir  DDRD			/* Define LCD data port direction */
 //#define LCD_Port PORTD			/* Define LCD data port */
 //#define RS PORTD2				/* Define Register Select pin */
 //#define EN PORTD3 				/* Define Enable signal pin */
 
-int score[16] = { 0 };
+int score[15] = { 0 };
 
 void LCD_Command( unsigned char cmnd )
 {
@@ -136,7 +143,7 @@ void counting(uint16_t candidate)
 
 uint16_t voting_section()
 {
-	char buff[5];
+	//char buff[5];
 	
 	LCD_Command (0x01);				// Clear display
 	LCD_String ("PLEASE VOTE.."); 	//sending string
@@ -147,10 +154,10 @@ uint16_t voting_section()
 	{
 		key = ~keypad_read();
 		key = 1 + log(key)/log(1.99);
-		
 	} while (!key);					// wait for voting
 	
 	counting(key);					// calculate score
+	LED_GREEN_PORT &= ~(1 << PORTB0);
 	return key;
 }
 
@@ -160,23 +167,42 @@ void result_section(uint16_t key)
 	LCD_String ("THANKS YOU :)");	//sending string
 	LCD_Command(0xC0);				//moving courser to second line
 	
-	int i = 0;
 	char buffer[20];
-	sprintf(buffer, "No.%d = %d", key, score[key-1]);		// collect keys to buffer
-	for (i = 0; i < strlen(buffer); i++)
-	{
-		LCD_Data(buffer[i]);					// send input character to LCD for displaying
-	}
+	sprintf(buffer, " No.%d", key);		// collect keys to buffer
+	LCD_String(buffer);
 }
 
+void summary_section()
+{
+	LCD_Command (0x01);				// Clear display
+	LCD_String ("VOTING RESULT:");	//sending string
+	LCD_Command(0xC0);				//moving courser to second line
+	
+	int i = 0;
+	char buffer[20];
+	for(i = 0; i < 15; i++)
+	{
+		sprintf(buffer, "No.%d = %d", i+1, score[i]);		// collect keys to buffer
+		LCD_Command (0x01);				// Clear display
+		LCD_String ("VOTING RESULT:");	//sending string
+		LCD_Command(0xC0);				//moving courser to second line
+		LCD_String (buffer);
+		_delay_ms(200);
+	}
+	
+}
 
 int main(void)
 {
-	unsigned char cardID[8] ;
-	uint8_t id=0;
-	char buffer[8];
-	int i;
+	//unsigned char cardID[8] ;
+	//uint8_t id=0;
+	//char buffer[8];
+	//int i;
 	
+	LED_GREEN_DDR |= (1 << PORTB0);
+	LED_GREEN_PORT |= (1 << PORTB0);
+	BUTTON_DDR &= ~(1 << PORTB1);
+	BUTTON_DDR |= (1 << PORTB1);
 	
 	keypad_init();
 	LCD_Init();
@@ -187,11 +213,17 @@ int main(void)
 	{
 		_delay_ms(1);
 		//id = I2C_ReadwithAck();
-		
-		
+				
 		uint16_t key = voting_section();
-		result_section(key);
-		
+		if (key == 16)
+		{
+			summary_section();
+		}
+		else
+		{
+			result_section(key);	
+		}
+		LED_GREEN_PORT |= (1 << PORTB0);
 		_delay_ms(200);
 	}
 }
