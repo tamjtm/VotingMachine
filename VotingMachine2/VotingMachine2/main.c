@@ -1,66 +1,72 @@
-/** Voting Machine LCD & Keypad */
-	
 #define F_CPU 8000000UL			/* Define CPU Frequency e.g. here 8MHz */
 #include <avr/io.h>				/* Include AVR std. library file */
 #include <util/delay.h>			/* Include Delay header file */
 #include <string.h>
 #include <stdio.h>
-/*
-#define KEYPAD_DDR DDRB
-#define KEYPAD_PORT PORTB
-#define KEYPAD_PIN PINB
-*/
-#define LCD_Dir  DDRD			/* Define LCD data port direction */
-#define LCD_Port PORTD			/* Define LCD data port */
-#define RS PORTD0				/* Define Register Select pin */
-#define EN PORTD1 				/* Define Enable signal pin */
 
-#define SPI_DDR DDRB 
-#define SPI_MOSI PORTB3
-#define SPI_SCK PORTB5
-#define SPI_SS PORTB2
+
+#define KEYPAD_R_DDR DDRC
+#define KEYPAD_R_PORT PORTC
+#define KEYPAD_C_DDR DDRD
+#define KEYPAD_C_PORT PORTD
+#define KEYPAD_C_PIN PIND
+
+#define RS PORTC4
+#define E PORTC5
+#define CTRL_DDR DDRC
+#define CTRL_PORT PORTC
+#define DATA_DDR DDRD
+#define DATA_PORT PORTD
+
+//#define LCD_Dir  DDRD			/* Define LCD data port direction */
+//#define LCD_Port PORTD			/* Define LCD data port */
+//#define RS PORTD2				/* Define Register Select pin */
+//#define EN PORTD3 				/* Define Enable signal pin */
 
 int score[16] = { 0 };
 
 void LCD_Command( unsigned char cmnd )
 {
-	LCD_Port = (LCD_Port & 0x0F) | (cmnd & 0xF0); /* sending upper nibble (4 bit high) */
-	LCD_Port &= ~ (1<<RS);		/* RS = 0 (command reg.) */
-	LCD_Port |= (1<<EN);		/* Enable pulse to send */
+	DATA_PORT = (DATA_PORT & 0x0F) | (cmnd & 0xF0); /* sending upper nibble (4 bit high) */
+	CTRL_PORT &= ~ (1<<RS);		/* RS = 0 (command reg.) */
+	CTRL_PORT |= (1<<E);		/* Enable pulse to send */
 	_delay_us(1);
-	LCD_Port &= ~ (1<<EN);
+	CTRL_PORT &= ~ (1<<E);
 
 	_delay_us(100);
 
-	LCD_Port = (LCD_Port & 0x0F) | (cmnd << 4);  /* sending lower nibble (4 bit low) */
-	LCD_Port |= (1<<EN);		/* Enable pulse to send */
+	DATA_PORT = (DATA_PORT & 0x0F) | (cmnd << 4);  /* sending lower nibble (4 bit low) */
+	CTRL_PORT |= (1<<E);		/* Enable pulse to send */
 	_delay_us(1);
-	LCD_Port &= ~ (1<<EN);
+	CTRL_PORT &= ~ (1<<E);
 	_delay_ms(1);
 }
 
 
 void LCD_Data( unsigned char data )
 {
-	LCD_Port = (LCD_Port & 0x0F) | (data & 0xF0); /* sending upper nibble (4 bit high) */
-	LCD_Port |= (1<<RS);		/* RS=1 (data reg.) */
-	LCD_Port|= (1<<EN);			/* Enable pulse to send */
+	DATA_PORT = (DATA_PORT & 0x0F) | (data & 0xF0); /* sending upper nibble (4 bit high) */
+	CTRL_PORT |= (1<<RS);		/* RS=1 (data reg.) */
+	CTRL_PORT|= (1<<E);			/* Enable pulse to send */
 	_delay_us(100);
-	LCD_Port &= ~ (1<<EN);
+	CTRL_PORT &= ~ (1<<E);
 
 	_delay_us(100);
 
-	LCD_Port = (LCD_Port & 0x0F) | (data << 4); /* sending lower nibble (4 bit low) */
-	LCD_Port |= (1<<EN);		/* Enable pulse to send */
+	DATA_PORT = (DATA_PORT & 0x0F) | (data << 4); /* sending lower nibble (4 bit low) */
+	CTRL_PORT |= (1<<E);		/* Enable pulse to send */
 	_delay_us(100);
-	LCD_Port &= ~ (1<<EN);
+	CTRL_PORT &= ~ (1<<E);
 	_delay_ms(1);
 }
 
 
 void LCD_Init (void)			/* LCD Initialize function */
 {
-	LCD_Dir = 0xFF;				/* Make LCD port direction as output */
+	CTRL_DDR |= (1<<RS) | (1<<E);
+	CTRL_PORT &= ~(1<<RS) & ~(1<<E);
+	DDRD |= (1<<PORTD7)|(1<<PORTD6)|(1<<PORTD5)|(1<<PORTD4);
+	DATA_PORT = (DATA_PORT & 0x0F);
 	_delay_ms(20);				/* LCD Power ON delay always > 15ms */
 	
 	LCD_Command(0x02);			/* send for 4 bit initialization of LCD  */
@@ -88,7 +94,7 @@ void LCD_Clear()
 	LCD_Command (0x80);		/* Cursor at home position */
 }
 
-/*
+
 uint16_t keypad_read()
 {
 	uint16_t key = 0;
@@ -98,17 +104,17 @@ uint16_t keypad_read()
 	{
 		key = key << 4;					// shift left 4-bit
 		
-		 scan a row and collect in key */
-/*		KEYPAD_DDR |= (1 << i);			// set DDRB0 to output
-		KEYPAD_PORT &= ~(1 << i);		// set to GND
+		// scan a row and collect in key 
+		KEYPAD_R_DDR |= (1 << i);		// set DDRB0 to output
+		KEYPAD_R_PORT &= ~(1 << i);		// set to GND
 		
 		_delay_ms(1);
 		
-		key |= (KEYPAD_PIN & 0xF0) >> 4;		// read only 4-bit MSB (clear 4-bit LSB by 0)
+		key |= (KEYPAD_C_PIN & 0x0F);		// read only 4-bit MSB (clear 4-bit LSB by 0)
 		
-		_delay_ms(1);
-		KEYPAD_DDR &= ~(1 << i);		// reset to input (pull up)
-		KEYPAD_PORT |= (1 << i);
+		_delay_ms(5);
+		KEYPAD_R_DDR &= ~(1 << i);		// reset to input (pull up)
+		KEYPAD_R_PORT |= (1 << i);
 	}
 	
 	return key;
@@ -116,10 +122,13 @@ uint16_t keypad_read()
 
 void keypad_init()
 {
-	KEYPAD_DDR = 0x00;		// set PORTB as input
-	KEYPAD_PORT = 0xFF;		// enable pull up
+	DDRC &= ~(1<<PORTC0) & ~(1<<PORTC1) & ~(1<<PORTC2) & ~(1<<PORTC3) ;		// set PORTB as input
+	PORTC |= (1<<PORTC0)|(1<<PORTC1)|(1<<PORTC2)|(1<<PORTC3);		// enable pull up
+	DDRD &= ~(1<<PORTD0) & ~(1<<PORTD1) & ~(1<<PORTD2) & ~(1<<PORTD3) ;		// set PORTB as input
+	PORTD |= (1<<PORTD0)|(1<<PORTD1)|(1<<PORTD2)|(1<<PORTD3);		// enable pull up
 }
-*/
+
+
 void counting(uint16_t candidate)
 {
 	score[candidate-1]++;
@@ -127,6 +136,8 @@ void counting(uint16_t candidate)
 
 uint16_t voting_section()
 {
+	char buff[5];
+	
 	LCD_Command (0x01);				// Clear display
 	LCD_String ("PLEASE VOTE.."); 	//sending string
 	LCD_Command(0xC0);				//moving courser to second line
@@ -134,8 +145,9 @@ uint16_t voting_section()
 	
 	do
 	{
-		//key = ~keypad_read();
+		key = ~keypad_read();
 		key = 1 + log(key)/log(1.99);
+		
 	} while (!key);					// wait for voting
 	
 	counting(key);					// calculate score
@@ -157,68 +169,6 @@ void result_section(uint16_t key)
 	}
 }
 
-void I2C_Init()
-{
-	TWBR=0x20; //SCL frequency is 100K for 8Mhz
-	TWCR |= (1<<TWEN); //enab1e TWI module
-}
-
-void I2C_Start()
-{
-	TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
-	while (!(TWCR & (1<<TWINT)));
-	
-	LCD_String("32");
-	TWDR = 0xD1;	//send address (in read mode)
-	TWCR = (1<<TWINT) | (1<<TWEN);		//Ack auto
-	while (!(TWCR & (1<<TWINT)));
-}
-
-void I2C_Stop(void)
-{
-	TWCR = (1<< TWINT) | (1<<TWEN) | (1<<TWSTO);
-	_delay_us(100) ; //wait for a short time
-}
-
-void I2C_Write(uint8_t v_i2cData_u8)
-{
-	TWDR = v_i2cData_u8 ;
-	TWCR = ((1<< TWINT) | (1<<TWEN));
-	while (!(TWCR & (1 <<TWINT)));
-}
-
-uint8_t I2C_ReadwithAck()
-{
-	TWCR = ((1<< TWINT) | (1<<TWEN) | (1<<TWEA));
-	LCD_String(" 12");
-	while ( !(TWCR & (1 <<TWINT)));
-	LCD_String(" 13");
-	return TWDR;
-}
-
-unsigned char RFID_Read()
-{
-	LCD_String("11");
-	uint8_t id;
-	unsigned char cardID[8];
-	int i;
-	char buffer[8];
-	
-	I2C_Start();
-	for(i=0;i<8;i++)
-	{
-		id = I2C_ReadwithAck();
-		cardID[i] = id;
-		sprintf(buffer, "%u", id);
-		for (i = 0; i < strlen(buffer); i++)
-		{
-			LCD_Data(buffer[i]);					// send input character to LCD for displaying
-		}
-	}
-	I2C_Stop();
-	
-	return *cardID;
-}
 
 int main(void)
 {
@@ -227,34 +177,20 @@ int main(void)
 	char buffer[8];
 	int i;
 	
-	DDRD |= (1<<PORTD2);
-	PORTD &= ~(1<<PORTD2);
 	
+	keypad_init();
 	LCD_Init();
-	//keypad_init();
-	I2C_Init();
+	//I2C_Init();
 	//spi_init();
 	
 	while (1)
 	{
-		LCD_Command (0x01);				// Clear display
-		LCD_String ("RFID NUMBER..");	//sending string
-		LCD_Command(0xC0);				//moving courser to second line
-		LCD_String("01");
-		I2C_Start();
-		LCD_String("02");
 		_delay_ms(1);
 		//id = I2C_ReadwithAck();
 		
-		sprintf(buffer, "%u", id);
-		for (i = 0; i < strlen(buffer); i++)
-		{
-			LCD_Data(buffer[i]);					// send input character to LCD for displaying
-		}
-		//*cardID = RFID_Read();
 		
-		//uint16_t key = voting_section();
-		//result_section(key);
+		uint16_t key = voting_section();
+		result_section(key);
 		
 		_delay_ms(200);
 	}

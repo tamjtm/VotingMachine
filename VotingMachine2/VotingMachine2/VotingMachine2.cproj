@@ -30,15 +30,15 @@
     <EraseKey />
     <AsfFrameworkConfig>
       <framework-data xmlns="">
-  <options />
-  <configurations />
-  <files />
-  <documentation help="" />
-  <offline-documentation help="" />
-  <dependencies>
-    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.40.0" />
-  </dependencies>
-</framework-data>
+        <options />
+        <configurations />
+        <files />
+        <documentation help="" />
+        <offline-documentation help="" />
+        <dependencies>
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.40.0" />
+        </dependencies>
+      </framework-data>
     </AsfFrameworkConfig>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -71,6 +71,12 @@
             <Value>libm</Value>
           </ListValues>
         </avrgcc.linker.libraries.Libraries>
+        <avrgcc.linker.libraries.LibrarySearchPaths>
+          <ListValues>
+            <Value>C:\Users\Admin\Desktop\0_Compear\3-2\CPE328\Project\avr-rfid-rc522-master</Value>
+            <Value>C:\Users\Admin\Desktop\0_Compear\3-2\CPE328\Project\MIFARE-RFID-with-AVR-master\firmware\src\lib</Value>
+          </ListValues>
+        </avrgcc.linker.libraries.LibrarySearchPaths>
         <avrgcc.assembler.general.IncludePaths>
           <ListValues>
             <Value>%24(PackRepoDir)\atmel\ATmega_DFP\1.2.209\include</Value>
@@ -110,6 +116,12 @@
             <Value>libm</Value>
           </ListValues>
         </avrgcc.linker.libraries.Libraries>
+        <avrgcc.linker.libraries.LibrarySearchPaths>
+          <ListValues>
+            <Value>C:\Users\Admin\Desktop\0_Compear\3-2\CPE328\Project\avr-rfid-rc522-master</Value>
+            <Value>C:\Users\Admin\Desktop\0_Compear\3-2\CPE328\Project\MIFARE-RFID-with-AVR-master\firmware\src\lib</Value>
+          </ListValues>
+        </avrgcc.linker.libraries.LibrarySearchPaths>
         <avrgcc.assembler.general.IncludePaths>
           <ListValues>
             <Value>%24(PackRepoDir)\atmel\ATmega_DFP\1.2.209\include</Value>
@@ -121,6 +133,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="mfrc522.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="mfrc522_cmd.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="mfrc522_reg.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="myutils.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>
