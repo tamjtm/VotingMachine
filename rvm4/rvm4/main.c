@@ -15,51 +15,55 @@
 #include "lcd.h"
 
 
-#define LCD_Dir  DDRD			/* Define LCD data port direction */
-#define LCD_Port PORTD			/* Define LCD data port */
-#define RS PORTD2				/* Define Register Select pin */
-#define EN PORTD3 				/* Define Enable signal pin */
-
+#define RS PORTC4
+#define E PORTC5
+#define CTRL_DDR DDRC
+#define CTRL_PORT PORTC
+#define DATA_DDR DDRD
+#define DATA_PORT PORTD
 
 void LCD_Command( unsigned char cmnd )
 {
-	LCD_Port = (LCD_Port & 0x0F) | (cmnd & 0xF0); /* sending upper nibble (4 bit high) */
-	LCD_Port &= ~ (1<<RS);		/* RS = 0 (command reg.) */
-	LCD_Port |= (1<<EN);		/* Enable pulse to send */
+	DATA_PORT = (DATA_PORT & 0x0F) | (cmnd & 0xF0); /* sending upper nibble (4 bit high) */
+	CTRL_PORT &= ~ (1<<RS);		/* RS = 0 (command reg.) */
+	CTRL_PORT |= (1<<E);		/* Enable pulse to send */
 	_delay_us(1);
-	LCD_Port &= ~ (1<<EN);
+	CTRL_PORT &= ~ (1<<E);
 
 	_delay_us(100);
 
-	LCD_Port = (LCD_Port & 0x0F) | (cmnd << 4);  /* sending lower nibble (4 bit low) */
-	LCD_Port |= (1<<EN);		/* Enable pulse to send */
+	DATA_PORT = (DATA_PORT & 0x0F) | (cmnd << 4);  /* sending lower nibble (4 bit low) */
+	CTRL_PORT |= (1<<E);		/* Enable pulse to send */
 	_delay_us(1);
-	LCD_Port &= ~ (1<<EN);
+	CTRL_PORT &= ~ (1<<E);
 	_delay_ms(1);
 }
 
 
 void LCD_Data( unsigned char data )
 {
-	LCD_Port = (LCD_Port & 0x0F) | (data & 0xF0); /* sending upper nibble (4 bit high) */
-	LCD_Port |= (1<<RS);		/* RS=1 (data reg.) */
-	LCD_Port|= (1<<EN);			/* Enable pulse to send */
+	DATA_PORT = (DATA_PORT & 0x0F) | (data & 0xF0); /* sending upper nibble (4 bit high) */
+	CTRL_PORT |= (1<<RS);		/* RS=1 (data reg.) */
+	CTRL_PORT|= (1<<E);			/* Enable pulse to send */
 	_delay_us(100);
-	LCD_Port &= ~ (1<<EN);
+	CTRL_PORT &= ~ (1<<E);
 
 	_delay_us(100);
 
-	LCD_Port = (LCD_Port & 0x0F) | (data << 4); /* sending lower nibble (4 bit low) */
-	LCD_Port |= (1<<EN);		/* Enable pulse to send */
+	DATA_PORT = (DATA_PORT & 0x0F) | (data << 4); /* sending lower nibble (4 bit low) */
+	CTRL_PORT |= (1<<E);		/* Enable pulse to send */
 	_delay_us(100);
-	LCD_Port &= ~ (1<<EN);
+	CTRL_PORT &= ~ (1<<E);
 	_delay_ms(1);
 }
 
 
 void LCD_Init (void)			/* LCD Initialize function */
 {
-	LCD_Dir = 0xFF;				/* Make LCD port direction as output */
+	CTRL_DDR |= (1<<RS) | (1<<E);
+	CTRL_PORT &= ~(1<<RS) & ~(1<<E);
+	DDRD |= (1<<PORTD7)|(1<<PORTD6)|(1<<PORTD5)|(1<<PORTD4);
+	DATA_PORT = (DATA_PORT & 0x0F);
 	_delay_ms(20);				/* LCD Power ON delay always > 15ms */
 	
 	LCD_Command(0x02);			/* send for 4 bit initialization of LCD  */
@@ -86,20 +90,13 @@ void LCD_Clear()
 	_delay_ms(1);
 	LCD_Command (0x80);		/* Cursor at home position */
 }
-/*
-void LCD_Hex(uint8_t x, uint8_t y,uint8_t d)
+
+void LCD_Cursor(unsigned char x, unsigned char y)
 {
-	LCDGotoXY(x,y);
-	uint8_t byte = '0';
-	(((d>>4)&0x0F)<=9) ? (byte='0'+((d>>4)&0x0F)) : (byte='A'+ ((d>>4)&0x0F)-0x0A);
-	LCD_Data(byte);
-	LCDBusyLoop();
-	
-	((d&0x0F)<=9) ? (byte='0'+ (d&0x0F)) : (byte='A'+ (d&0x0F)-0x0A);
-	LCD_Data(byte);
-	LCDBusyLoop();
+	unsigned char firstcharadd[]={0x80, 0xC0};
+	LCD_Command(firstcharadd[y] + x);
 }
-*/
+
 int main(void)
 {
 	char buffer[5];
@@ -159,9 +156,6 @@ int main(void)
 					sprintf(buffer,"%u",str[byte]);
 					LCD_String(buffer);					
 				}
-	
-				
-				
 				_delay_ms(2500);
 			}
 			else
