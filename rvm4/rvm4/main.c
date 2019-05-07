@@ -10,21 +10,15 @@
 #include <util/delay.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <mymfrc522.h>
+#include "mfrc522.h"
+#include "spi.h"
+#include "lcd.h"
 
 
 #define LCD_Dir  DDRD			/* Define LCD data port direction */
 #define LCD_Port PORTD			/* Define LCD data port */
-#define RS PORTD0				/* Define Register Select pin */
-#define EN PORTD1 				/* Define Enable signal pin */
-
-#define SPI_DDR		DDRB
-#define SPI_PORT	PORTB
-#define SPI_PIN		PINB
-#define SPI_MOSI	PORTB3
-#define SPI_MISO	PORTB4
-#define SPI_SS		PORTB2
-#define SPI_SCK		PORTB5
+#define RS PORTD2				/* Define Register Select pin */
+#define EN PORTD3 				/* Define Enable signal pin */
 
 
 void LCD_Command( unsigned char cmnd )
@@ -92,51 +86,93 @@ void LCD_Clear()
 	_delay_ms(1);
 	LCD_Command (0x80);		/* Cursor at home position */
 }
-
-
+/*
+void LCD_Hex(uint8_t x, uint8_t y,uint8_t d)
+{
+	LCDGotoXY(x,y);
+	uint8_t byte = '0';
+	(((d>>4)&0x0F)<=9) ? (byte='0'+((d>>4)&0x0F)) : (byte='A'+ ((d>>4)&0x0F)-0x0A);
+	LCD_Data(byte);
+	LCDBusyLoop();
+	
+	((d&0x0F)<=9) ? (byte='0'+ (d&0x0F)) : (byte='A'+ (d&0x0F)-0x0A);
+	LCD_Data(byte);
+	LCDBusyLoop();
+}
+*/
 int main(void)
 {
+	char buffer[5];
 	uint8_t byte;
 	uint8_t str[MAX_LEN];
-	char buffer[5];
 	_delay_ms(50);
-	
-    spi_init();
-    mfrc522_init();
 	LCD_Init();
+	LCD_String("RFID Reader");
+	//LCDWriteStringXY(5,1,VERSION_STR);
 	
-    while (1) 
-    {
-		byte = mfrc522_read(VersionReg);
-		if(byte == 0x92)
+	
+	spi_init();
+	_delay_ms(1000);
+	LCD_Clear();
+	
+	//init reader
+	mfrc522_init();
+	
+	//check version of the reader
+	byte = mfrc522_read(VersionReg);
+	if(byte == 0x92)
+	{
+		LCD_String("MIFARE RC522v2");
+		LCD_Command(0xC0);
+		LCD_String("Detected");
+	}else if(byte == 0x91 || byte==0x90)
+	{
+		LCD_String("MIFARE RC522v1");
+		LCD_Command(0xC0);
+		LCD_String("Detected");
+	}else
+	{
+		LCD_String("No reader found");
+	}
+	
+	byte = mfrc522_read(ComIEnReg);
+	mfrc522_write(ComIEnReg,byte|0x20);
+	byte = mfrc522_read(DivIEnReg);
+	mfrc522_write(DivIEnReg,byte|0x80);
+	
+	_delay_ms(1500);
+	LCD_Clear();
+	
+	while(1){
+		byte = mfrc522_request(PICC_REQALL,str);
+		//sprintf(buffer,"%u",byte);
+		//LCDHexDumpXY(0,0,byte);
+		
+		if(byte == CARD_FOUND)
 		{
-			LCD_String("MIFARE RC522v2");
-			LCD_String("Detected");
-		}else if(byte == 0x91 || byte==0x90)
-		{
-			LCD_String("MIFARE RC522v1");
-			LCD_String("Detected");
-		}else
-		{
-			LCD_String("No reader found");
+			LCD_String("q");
+			byte = mfrc522_get_card_serial(str);
+			if(byte == CARD_FOUND)
+			{
+				for(byte=0;byte<8;byte++)
+				{
+					sprintf(buffer,"%u",str[byte]);
+					LCD_String(buffer);					
+				}
+	
+				
+				
+				_delay_ms(2500);
+			}
+			else
+			{
+				LCDWriteStringXY(0,1,"Error");
+			}
 		}
-		_delay_ms(100);
-		
-		byte = mfrc522_read(ComIEnReg);
-		mfrc522_write(ComIEnReg,byte|0x20);
-		byte = mfrc522_read(DivIEnReg);
-		mfrc522_write(DivIEnReg,byte|0x80);
-		
-		_delay_ms(1500);
-		LCD_Clear();
-		
-		while(1){
-			byte = mfrc522_request(PICC_REQALL,str);
-			sprintf(buffer, "%u", byte);
-			LCD_String(buffer);
-			_delay_ms(1000);
-		}
-
-    }
+		LCD_String("o");
+		_delay_ms(1000);
+	}
+	
+	
 }
 

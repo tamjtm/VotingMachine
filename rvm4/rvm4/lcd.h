@@ -25,7 +25,7 @@
 
 #include <util/delay.h>
 
-#include <myutils.h>
+#include "myutils.h"
 
 #ifndef _LCD_H
 #define _LCD_H
@@ -40,13 +40,13 @@
 
 
 #define LCD_RS D			//RS SIGNAL
-#define LCD_RS_POS PD0
+#define LCD_RS_POS PORTD2
 
 #define LCD_RW D			//RW SIGNAL
 #define LCD_RW_POS PD1
 
 #define LCD_E D 			//Enable/strobe signal
-#define LCD_E_POS	PD2		//Position of enable in above port
+#define LCD_E_POS	PORTD3		//Position of enable in above port
 
 
 #define LCD_DATA D			//Port PD0-PD3 are connected to D4-D7

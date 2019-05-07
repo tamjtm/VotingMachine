@@ -5,8 +5,8 @@
  *  Author: Admin
  */ 
 
-#include <mymfrc522.h>
-#include <spi.h>
+#include "mymfrc522.h"
+#include "spi.h"
 
 void mfrc522_init()
 {

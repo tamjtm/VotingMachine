@@ -26,7 +26,7 @@
 #include <inttypes.h>
 #include <util/delay.h>
 
-#include <lcd.h>
+#include "lcd.h"
 
 //Custom Charset support
 

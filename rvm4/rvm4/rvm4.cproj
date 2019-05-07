@@ -130,19 +130,28 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="mymfrc522.c">
+    <Compile Include="lcd.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lcd.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="mymfrc522.h">
+    <Compile Include="mfrc522.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="mymfrc522_cmd.h">
+    <Compile Include="mfrc522.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="mymfrc522_reg.h">
+    <Compile Include="mfrc522_cmd.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="mfrc522_reg.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="myutils.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="spi.c">

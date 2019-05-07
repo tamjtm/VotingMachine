@@ -2,9 +2,11 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
-mymfrc522.c
+lcd.c
 
 main.c
+
+mfrc522.c
 
 spi.c
 

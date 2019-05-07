@@ -1,5 +1,5 @@
 /*
- * spi.c
+ * mfrc522_cmd.h
  * 
  * Copyright 2013 Shimon <shimon@monistit.com>
  * 
@@ -20,34 +20,20 @@
  * 
  * 
  */
-#include "spi.h"
+#ifndef MFRC522_CMD_H
+#define MFRC522_CMD_H
 
-#if SPI_CONFIG_AS_MASTER
-void spi_init()
-{
-	SPI_DDR = (1<<SPI_MOSI)|(1<<SPI_SCK)|(1<<SPI_SS);
-	SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR0);//prescaler 16
-}
+//command set
+#define Idle_CMD 				0x00
+#define Mem_CMD					0x01
+#define GenerateRandomId_CMD	0x02
+#define CalcCRC_CMD				0x03
+#define Transmit_CMD			0x04
+#define NoCmdChange_CMD			0x07
+#define Receive_CMD				0x08
+#define Transceive_CMD			0x0C
+#define Reserved_CMD			0x0D
+#define MFAuthent_CMD			0x0E
+#define SoftReset_CMD			0x0F
 
-
-uint8_t spi_transmit(uint8_t data)
-{
-	SPDR = data;
-	while(!(SPSR & (1<<SPIF)));
-	
-	return SPDR;
-}
-
-#else
-void spi_init()
-{
-	SPI_DDR = (1<<SPI_MISO);
-	SPCR = (1<<SPE);
-}
-
-uint8_t spi_transmit(uint8_t data)
-{
-	while(!(SPSR & (1<<SPIF)));
-	return SPDR;
-}
 #endif

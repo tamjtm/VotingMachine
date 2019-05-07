@@ -1,16 +1,31 @@
 /*
- * mymfrc522.h
- *
- * Created: 6/5/2562 17:30:20
- *  Author: Admin
- */ 
+ * mfrc522.h
+ * 
+ * Copyright 2013 Shimon <shimon@monistit.com>
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ * 
+ * 
+ */
+#ifndef MFRC522_H
+#define MFRC522_H
 
 #include <stdint.h>
-#include "mymfrc522_cmd.h"
-#include "mymfrc522_reg.h"
-
-#ifndef MYMFRC522_H_
-#define MYMFRC522_H_
+#include "mfrc522_cmd.h"
+#include "mfrc522_reg.h"
 
 #define CARD_FOUND		1
 #define CARD_NOT_FOUND	2
@@ -48,5 +63,4 @@ uint8_t	mfrc522_request(uint8_t req_mode, uint8_t * tag_type);
 uint8_t mfrc522_to_card(uint8_t cmd, uint8_t *send_data, uint8_t send_data_len, uint8_t *back_data, uint32_t *back_data_len);
 uint8_t mfrc522_get_card_serial(uint8_t * serial_out);
 
-
-#endif /* MYMFRC522_H_ */
+#endif
